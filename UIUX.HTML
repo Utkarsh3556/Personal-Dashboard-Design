@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Progress Tracker App</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      margin: 0;
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+      background: linear-gradient(120deg, #e0e7ff 0%, #f4f6fa 50%, #c2e9fb 100%);
+      transition: background 0.5s;
+    }
+    /* Animated gradient blobs */
+    body::before, body::after {
+      content: '';
+      position: fixed;
+      z-index: 0;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.6;
+      pointer-events: none;
+      animation: moveBlobs 18s ease-in-out infinite alternate;
+    }
+    body::before {
+      width: 500px;
+      height: 500px;
+      background: radial-gradient(circle at 30% 30%, #a5b4fc 0%, #60a5fa 100%);
+      top: -140px;
+      left: -140px;
+      animation-delay: 0s;
+    }
+    body::after {
+      width: 400px;
+      height: 400px;
+      background: radial-gradient(circle at 70% 70%, #fbc2eb 0%, #a6c1ee 100%);
+      bottom: -120px;
+      right: -120px;
+      animation-delay: 4s;
+    }
+    .blob-extra {
+      position: fixed;
+      z-index: 0;
+      width: 350px;
+      height: 350px;
+      left: 60%;
+      top: 60%;
+      border-radius: 50%;
+      background: radial-gradient(circle at 60% 40%, #f9ea8f 0%, #fbc2eb 100%);
+      filter: blur(70px);
+      opacity: 0.5;
+      pointer-events: none;
+      animation: moveBlobs2 22s ease-in-out infinite alternate;
+    }
+    @keyframes moveBlobs {
+      0% { transform: scale(1) translateY(0) translateX(0);}
+      50% { transform: scale(1.18) translateY(60px) translateX(40px);}
+      100% { transform: scale(1) translateY(0) translateX(0);}
+    }
+    @keyframes moveBlobs2 {
+      0% { transform: scale(1) translateY(0) translateX(0);}
+      50% { transform: scale(1.12) translateY(-40px) translateX(-30px);}
+      100% { transform: scale(1) translateY(0) translateX(0);}
+    }
+    .overlay {
+      position: fixed;
+      z-index: 1;
+      top: 0; left: 0; right: 0; bottom: 0;
+      pointer-events: none;
+      background: linear-gradient(120deg, rgba(255,255,255,0.15) 0%, rgba(200,220,255,0.09) 100%);
+    }
+    .header {
+      position: relative;
+      z-index: 2;
+      text-align: center;
+      padding: 2em 1em 1em 1em;
+      color: #3b3b3b;
+      font-size: 2.2em;
+      font-weight: bold;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 12px #c2e9fb80;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.3em;
+    }
+    .header-logo {
+      font-size: 2.5em;
+      margin-bottom: 0.2em;
+      filter: drop-shadow(0 2px 8px #a5b4fc80);
+      animation: logoPop 1.2s cubic-bezier(.68,-0.55,.27,1.55) both;
+    }
+    @keyframes logoPop {
+      0% { transform: scale(0.7) rotate(-10deg); opacity: 0; }
+      80% { transform: scale(1.1) rotate(5deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); }
+    }
+    .nav {
+      display: flex;
+      justify-content: center;
+      background: #fff;
+      box-shadow: 0 2px 8px #e0e7ef;
+      border-radius: 12px;
+      margin: 0 auto 2em auto;
+      max-width: 420px;
+      position: relative;
+      z-index: 2;
+      overflow: hidden;
+    }
+    .nav button {
+      flex: 1;
+      padding: 1em;
+      border: none;
+      background: none;
+      font-size: 1.1em;
+      cursor: pointer;
+      transition: background 0.2s, color 0.2s;
+      color: #555;
+      font-weight: 500;
+    }
+    .nav button.active, .nav button:hover {
+      background: #e0e7ff;
+      color: #4f8cff;
+      border-bottom: 3px solid #4f8cff;
+    }
+    .screen {
+      display: none;
+      padding: 2em 1em 1em 1em;
+      max-width: 420px;
+      margin: auto;
+      position: relative;
+      z-index: 2;
+      animation: fadeIn 0.7s;
+    }
+    .screen.active { display: block; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(30px);}
+      to { opacity: 1; transform: translateY(0);}
+    }
+    .card {
+      background: #fff;
+      border-radius: 16px;
+      box-shadow: 0 4px 16px #e0e7ef;
+      margin-bottom: 1.5em;
+      padding: 1.5em;
+      transition: box-shadow 0.2s, transform 0.2s;
+    }
+    .card:hover {
+      box-shadow: 0 8px 32px #c2e9fb80;
+      transform: translateY(-4px) scale(1.01);
+    }
+    .xp { font-size: 2em; font-weight: bold; color: #4f8cff; }
+    .level { font-size: 1.2em; color: #333; }
+    .streak { color: #ffb300; font-weight: bold; }
+    .badges { display: flex; gap: 0.5em; }
+    .badge {
+      background: linear-gradient(135deg, #e0e7ef 60%, #fbc2eb 100%);
+      border-radius: 50%;
+      width: 44px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.6em;
+      box-shadow: 0 2px 8px #e0e7ef;
+      transition: transform 0.2s;
+    }
+    .badge:hover { transform: scale(1.15) rotate(-8deg);}
+    .mood { font-size: 1.5em; }
+    .user-info { font-size: 1.1em; margin-bottom: 1em; }
+    .recent-activity { font-size: 0.98em; color: #666; }
+    .notes-card {
+      background: #f9fafc;
+      border-left: 5px solid #4f8cff;
+      border-radius: 12px;
+      box-shadow: 0 1px 8px #e0e7ef;
+      margin-bottom: 1.5em;
+      padding: 1em 1.2em;
+      font-size: 1em;
+      transition: box-shadow 0.2s;
+    }
+    .notes-card textarea {
+      width: 100%;
+      border: none;
+      background: transparent;
+      resize: vertical;
+      min-height: 50px;
+      font-size: 1em;
+      outline: none;
+      color: #333;
+      font-family: inherit;
+    }
+    .notes-title {
+      font-weight: bold;
+      color: #4f8cff;
+      margin-bottom: 0.5em;
+      display: flex;
+      align-items: center;
+      gap: 0.4em;
+      font-size: 1.1em;
+    }
+    .notes-save {
+      background: #4f8cff;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 0.4em 1em;
+      margin-top: 0.5em;
+      cursor: pointer;
+      float: right;
+      font-size: 0.95em;
+      transition: background 0.2s;
+    }
+    .notes-save:hover {
+      background: #376fd3;
+    }
+    .footer {
+      text-align: center;
+      color: #888;
+      font-size: 1em;
+      padding: 2em 1em 1em 1em;
+      margin-top: 2em;
+      z-index: 2;
+      position: relative;
+      letter-spacing: 1px;
+    }
+    @media (max-width: 600px) {
+      .header { font-size: 1.3em; padding: 1.2em 0.5em 0.5em 0.5em;}
+      .nav, .screen { max-width: 98vw; }
+      .card, .notes-card { padding: 1em; }
+    }
+  </style>
+</head>
+<body>
+  <div class="blob-extra"></div>
+  <div class="overlay"></div>
+  <div class="header">
+    <span class="header-logo">🚀</span>
+    Progress Tracker
+  </div>
+  <div class="nav">
+    <button id="dashboardBtn" class="active" onclick="showScreen('dashboard')">Dashboard</button>
+    <button id="statusBtn" onclick="showScreen('status')">Status</button>
+  </div>
+
+  <!-- Dashboard Home Screen -->
+  <div id="dashboard" class="screen active">
+    <div class="notes-card">
+      <div class="notes-title">📝 Notes</div>
+      <textarea id="dashboardNotes" placeholder="Write your thoughts or reminders here..."></textarea>
+      <button class="notes-save" onclick="saveNotes('dashboardNotes')">Save</button>
+    </div>
+    <div class="card">
+      <div class="xp">XP: 1,250</div>
+      <div class="level">Level: 7</div>
+    </div>
+    <div class="card">
+      <div class="streak">🔥 Streak: 12 days</div>
+    </div>
+    <div class="card">
+      <div>Badges:</div>
+      <div class="badges">
+        <div class="badge" title="Early Bird">🌅</div>
+        <div class="badge" title="Consistency">🏅</div>
+        <div class="badge" title="Mood Master">😊</div>
+      </div>
+    </div>
+    <div class="card">
+      <div>Mood today: <span class="mood">😊 Happy</span></div>
+    </div>
+  </div>
+
+  <!-- Personal Status Screen -->
+  <div id="status" class="screen">
+    <div class="card user-info">
+      <strong>User:</strong> Utkarsh Kesharwani<br>
+      <strong>Email:</strong> Kesharwaniutkarsh2@email.com
+    </div>
+    <div class="card">
+      <div>Current Mood: <span class="mood">😊 Happy</span></div>
+    </div>
+    <div class="card recent-activity">
+      <div><strong>Recent Activity:</strong></div>
+      <ul>
+        <li>Completed "Daily Reflection" - +50 XP</li>
+        <li>Earned "Consistency" badge</li>
+        <li>Streak extended to 12 days</li>
+      </ul>
+    </div>
+    <div class="notes-card">
+      <div class="notes-title">📝 Notes</div>
+      <textarea id="statusNotes" placeholder="Write your thoughts or reminders here..."></textarea>
+      <button class="notes-save" onclick="saveNotes('statusNotes')">Save</button>
+    </div>
+  </div>
+
+  <div class="footer">
+    &copy; 2025 Progress Tracker. All rights reserved.
+  </div>
+
+  <script>
+    function showScreen(screenId) {
+      const screens = document.querySelectorAll('.screen');
+      const buttons = document.querySelectorAll('.nav button');
+      screens.forEach(screen => {
+        screen.classList.remove('active');
+      });
+      buttons.forEach(button => {
+        button.classList.remove('active');
+      });
+      document.getElementById(screenId).classList.add('active');
+      document.querySelector(`.nav button[onclick="showScreen('${screenId}')"]`).classList.add('active');
+    }
+
+    function saveNotes(textareaId) {
+      const textarea = document.getElementById(textareaId);
+      // Simulate saving notes
+      setTimeout(() => {
+        textarea.style.backgroundColor = '#e0ffe0';
+        setTimeout(() => {
+          textarea.style.backgroundColor = '';
+        }, 1000);
+      }, 300);
+    }
+  </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
